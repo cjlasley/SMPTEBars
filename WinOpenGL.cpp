@@ -8,6 +8,9 @@
 #include <GL/gl.h>			/* OpenGL header file */
 #include <stdio.h>
 
+/*Link with OpenGL Libraries on Windows*/
+#pragma comment(lib, "OpenGL32.lib")
+
 
 HDC hDC;				/* device context */
 HPALETTE hPalette = 0;			/* custom palette (if needed) */
@@ -91,11 +94,11 @@ WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
     }
 
-    return DefWindowProc(hWnd, uMsg, wParam, lParam); 
+    return (LONG)DefWindowProc(hWnd, uMsg, wParam, lParam); 
 } 
 
 HWND
-CreateOpenGLWindow(char* title, int x, int y, int width, int height, 
+CreateOpenGLWindow(LPCWSTR title, int x, int y, int width, int height, 
 		   BYTE type, DWORD flags)
 {
     int         n, pf;
@@ -107,7 +110,7 @@ CreateOpenGLWindow(char* title, int x, int y, int width, int height,
 
     /* only register the window class once - use hInstance as a flag. */
     if (!hInstance) {
-	hInstance = GetModuleHandle(NULL);
+	hInstance        = GetModuleHandle(NULL);
 	wc.style         = CS_OWNDC;
 	wc.lpfnWndProc   = (WNDPROC)WindowProc;
 	wc.cbClsExtra    = 0;
@@ -117,22 +120,22 @@ CreateOpenGLWindow(char* title, int x, int y, int width, int height,
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = NULL;
 	wc.lpszMenuName  = NULL;
-	wc.lpszClassName = "OpenGL";
+	wc.lpszClassName = L"OpenGL";
 
 	if (!RegisterClass(&wc)) {
-	    MessageBox(NULL, "RegisterClass() failed:  "
-		       "Cannot register window class.", "Error", MB_OK);
+	    MessageBox(NULL, L"RegisterClass() failed:  "
+		       L"Cannot register window class.", L"Error", MB_OK);
 	    return NULL;
 	}
     }
 
-    hWnd = CreateWindow("OpenGL", title, WS_OVERLAPPEDWINDOW |
+    hWnd = CreateWindow(L"OpenGL", title, WS_OVERLAPPEDWINDOW |
 			WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
 			x, y, width, height, NULL, NULL, hInstance, NULL);
 
     if (hWnd == NULL) {
-	MessageBox(NULL, "CreateWindow() failed:  Cannot create a window.",
-		   "Error", MB_OK);
+	MessageBox(NULL, L"CreateWindow() failed:  Cannot create a window.",
+		   L"Error", MB_OK);
 	return NULL;
     }
 
@@ -149,14 +152,14 @@ CreateOpenGLWindow(char* title, int x, int y, int width, int height,
 
     pf = ChoosePixelFormat(hDC, &pfd);
     if (pf == 0) {
-	MessageBox(NULL, "ChoosePixelFormat() failed:  "
-		   "Cannot find a suitable pixel format.", "Error", MB_OK); 
+	MessageBox(NULL, L"ChoosePixelFormat() failed:  "
+		   L"Cannot find a suitable pixel format.", L"Error", MB_OK); 
 	return 0;
     } 
  
     if (SetPixelFormat(hDC, pf, &pfd) == FALSE) {
-	MessageBox(NULL, "SetPixelFormat() failed:  "
-		   "Cannot set format specified.", "Error", MB_OK);
+	MessageBox(NULL, L"SetPixelFormat() failed:  "
+		   L"Cannot set format specified.", L"Error", MB_OK);
 	return 0;
     } 
 
@@ -222,7 +225,7 @@ CreateOpenGLWindow(char* title, int x, int y, int width, int height,
 	free(lpPal);
     }
 
-    ReleaseDC(hDC, hWnd);
+    ReleaseDC(WindowFromDC(hDC), GetDC(hWnd));
 
     return hWnd;
 }    
@@ -244,14 +247,14 @@ WinMain(HINSTANCE hCurrentInst, HINSTANCE hPreviousInst,
 	color = PFD_TYPE_COLORINDEX;
     } 
     if (strstr(lpszCmdLine, "-h")) {
-	MessageBox(NULL, "animate [-ci] [-sb]\n"
-		   "  -sb   single buffered\n"
-		   "  -ci   color index\n",
-		   "Usage help", MB_ICONINFORMATION);
+	MessageBox(NULL, L"animate [-ci] [-sb]\n"
+		   L"  -sb   single buffered\n"
+		   L"  -ci   color index\n",
+		   L"Usage help", MB_ICONINFORMATION);
 	exit(0);
     }
 
-    hWnd = CreateOpenGLWindow("animate", 0, 0, 256, 256, color, buffer);
+    hWnd = CreateOpenGLWindow(L"animate", 0, 0, 256, 256, color, buffer);
     if (hWnd == NULL)
 	exit(1);
 
@@ -277,7 +280,7 @@ WinMain(HINSTANCE hCurrentInst, HINSTANCE hPreviousInst,
 quit:
 
     wglMakeCurrent(NULL, NULL);
-    ReleaseDC(hDC, hWnd);
+    ReleaseDC(WindowFromDC(hDC), GetDC(hWnd));
     wglDeleteContext(hRC);
     DestroyWindow(hWnd);
     if (hPalette)
